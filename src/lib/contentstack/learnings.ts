@@ -22,6 +22,23 @@ function buildEmployeeReference(employeeUid: string): ContentstackReference[] {
   return [{ uid: employeeUid, _content_type_uid: CONTENT_TYPES.EMPLOYEE }];
 }
 
+// Helper to wait for entry to be available in Delivery API (handles propagation delay)
+async function waitForEntry(
+  uid: string,
+  maxRetries = 5,
+  delayMs = 1000
+): Promise<LearningEntry> {
+  for (let i = 0; i < maxRetries; i++) {
+    const entry = await getLearningByUid(uid);
+    if (entry) {
+      return entry;
+    }
+    // Wait before retrying
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+  throw new Error("Entry not available after publishing. Please refresh to see your learning.");
+}
+
 // Helper to build team reference
 function buildTeamReference(teamUid: string): ContentstackReference[] {
   return [{ uid: teamUid, _content_type_uid: CONTENT_TYPES.TEAM }];
@@ -170,12 +187,8 @@ export async function createLearning(
     },
   });
 
-  // Fetch the created entry via Delivery SDK to get properly typed data
-  const createdLearning = await getLearningByUid(entry.uid);
-  if (!createdLearning) {
-    throw new Error("Failed to fetch created learning entry");
-  }
-  return createdLearning;
+  // Wait for entry to be available in Delivery API (handles propagation delay)
+  return await waitForEntry(entry.uid);
 }
 
 // Update learning entry
@@ -222,12 +235,8 @@ export async function updateLearning(
     },
   });
 
-  // Fetch the updated entry via Delivery SDK to get properly typed data
-  const updatedLearning = await getLearningByUid(uid);
-  if (!updatedLearning) {
-    throw new Error("Failed to fetch updated learning entry");
-  }
-  return updatedLearning;
+  // Wait for updated entry to be available in Delivery API
+  return await waitForEntry(uid);
 }
 
 // Delete learning entry

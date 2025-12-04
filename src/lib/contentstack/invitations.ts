@@ -138,6 +138,16 @@ export async function validateInvitationToken(token: string): Promise<{
   return { valid: true, invitation };
 }
 
+// Helper to wait for entry to be available in Delivery API (handles propagation delay)
+async function waitForInvitation(uid: string, maxRetries = 5, delayMs = 1000): Promise<Invitation> {
+  for (let i = 0; i < maxRetries; i++) {
+    const entry = await getInvitationByUid(uid);
+    if (entry) return entry;
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+  throw new Error("Invitation not available after publishing. Please refresh.");
+}
+
 // Create invitation
 export async function createInvitation(
   input: CreateInvitationInput,
@@ -178,12 +188,8 @@ export async function createInvitation(
     },
   });
 
-  // Fetch the created entry via Delivery SDK to get properly typed data
-  const createdInvitation = await getInvitationByUid(entry.uid);
-  if (!createdInvitation) {
-    throw new Error("Failed to fetch created invitation");
-  }
-  return createdInvitation;
+  // Wait for entry to be available in Delivery API
+  return await waitForInvitation(entry.uid);
 }
 
 // Update invitation status
@@ -204,12 +210,8 @@ export async function updateInvitationStatus(
     },
   });
 
-  // Fetch the updated entry via Delivery SDK to get properly typed data
-  const updatedInvitation = await getInvitationByUid(uid);
-  if (!updatedInvitation) {
-    throw new Error("Failed to fetch updated invitation");
-  }
-  return updatedInvitation;
+  // Wait for updated entry to be available in Delivery API
+  return await waitForInvitation(uid);
 }
 
 // Accept invitation (mark as accepted)

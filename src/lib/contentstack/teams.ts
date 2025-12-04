@@ -78,6 +78,16 @@ export async function getTeamWithMembers(teamUid: string) {
   };
 }
 
+// Helper to wait for entry to be available in Delivery API (handles propagation delay)
+async function waitForTeam(uid: string, maxRetries = 5, delayMs = 1000): Promise<Team> {
+  for (let i = 0; i < maxRetries; i++) {
+    const entry = await getTeamByUid(uid);
+    if (entry) return entry;
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+  throw new Error("Team not available after publishing. Please refresh.");
+}
+
 // Create team using Management SDK
 export async function createTeam(input: CreateTeamInput): Promise<Team> {
   const contentType = getManagementContentType(CONTENT_TYPES.TEAM);
@@ -100,12 +110,8 @@ export async function createTeam(input: CreateTeamInput): Promise<Team> {
     },
   });
 
-  // Fetch the created entry via Delivery SDK to get properly typed data
-  const createdTeam = await getTeamByUid(entry.uid);
-  if (!createdTeam) {
-    throw new Error("Failed to fetch created team");
-  }
-  return createdTeam;
+  // Wait for entry to be available in Delivery API
+  return await waitForTeam(entry.uid);
 }
 
 // Update team using Management SDK
@@ -136,12 +142,8 @@ export async function updateTeam(uid: string, input: UpdateTeamInput): Promise<T
     },
   });
 
-  // Fetch the updated entry via Delivery SDK to get properly typed data
-  const updatedTeam = await getTeamByUid(uid);
-  if (!updatedTeam) {
-    throw new Error("Failed to fetch updated team");
-  }
-  return updatedTeam;
+  // Wait for updated entry to be available in Delivery API
+  return await waitForTeam(uid);
 }
 
 // Archive team (soft delete)

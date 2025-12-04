@@ -125,6 +125,16 @@ function buildTeamReference(teamUid: string): ContentstackReference[] {
   return [{ uid: teamUid, _content_type_uid: CONTENT_TYPES.TEAM }];
 }
 
+// Helper to wait for entry to be available in Delivery API (handles propagation delay)
+async function waitForEmployee(uid: string, maxRetries = 5, delayMs = 1000): Promise<Employee> {
+  for (let i = 0; i < maxRetries; i++) {
+    const entry = await getEmployeeByUid(uid);
+    if (entry) return entry;
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+  throw new Error("Employee not available after publishing. Please refresh.");
+}
+
 // Create employee using Management SDK
 export async function createEmployee(input: CreateEmployeeInput): Promise<Employee> {
   const contentType = getManagementContentType(CONTENT_TYPES.EMPLOYEE);
@@ -159,12 +169,8 @@ export async function createEmployee(input: CreateEmployeeInput): Promise<Employ
     },
   });
 
-  // Fetch the created entry via Delivery SDK to get properly typed data
-  const createdEmployee = await getEmployeeByUid(entry.uid);
-  if (!createdEmployee) {
-    throw new Error("Failed to fetch created employee");
-  }
-  return createdEmployee;
+  // Wait for entry to be available in Delivery API
+  return await waitForEmployee(entry.uid);
 }
 
 // Update employee using Management SDK
@@ -213,12 +219,8 @@ export async function updateEmployee(
     },
   });
 
-  // Fetch the updated entry via Delivery SDK to get properly typed data
-  const updatedEmployee = await getEmployeeByUid(uid);
-  if (!updatedEmployee) {
-    throw new Error("Failed to fetch updated employee");
-  }
-  return updatedEmployee;
+  // Wait for updated entry to be available in Delivery API
+  return await waitForEmployee(uid);
 }
 
 // Link Google ID to existing employee (for invite acceptance)
@@ -245,10 +247,6 @@ export async function linkGoogleIdToEmployee(
     },
   });
 
-  // Fetch the updated entry via Delivery SDK to get properly typed data
-  const updatedEmployee = await getEmployeeByUid(uid);
-  if (!updatedEmployee) {
-    throw new Error("Failed to fetch updated employee");
-  }
-  return updatedEmployee;
+  // Wait for updated entry to be available in Delivery API
+  return await waitForEmployee(uid);
 }
