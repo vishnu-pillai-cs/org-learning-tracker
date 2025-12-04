@@ -96,7 +96,7 @@ export function LearningCard({
                   href={`/learnings/${learning.uid}`}
                   className="font-semibold text-slate-900 hover:text-emerald-600 transition-colors line-clamp-1"
                 >
-                  {learning.title}
+                  {learning.name}
                 </Link>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
                   <span>{formattedDate}</span>

@@ -1,4 +1,5 @@
 import { Query } from "contentstack";
+import { nanoid } from "nanoid";
 import {
   getDeliveryClient,
   getManagementContentType,
@@ -138,8 +139,12 @@ export async function createLearning(
 ): Promise<LearningEntry> {
   const contentType = getManagementContentType(CONTENT_TYPES.LEARNING_ENTRY);
 
+  // Auto-generate unique title for Contentstack, use 'name' field for display
+  const uniqueTitle = `learning-${nanoid(12)}`;
+
   const entryData: LearningEntryData = {
-    title: input.title,
+    title: uniqueTitle,
+    name: input.title, // User-facing learning title
     description: input.description ?? "",
     type: input.type,
     source_url: input.source_url ?? "",
@@ -181,8 +186,9 @@ export async function updateLearning(
   const contentType = getManagementContentType(CONTENT_TYPES.LEARNING_ENTRY);
   const entry: ManagementEntry = await contentType.entry(uid).fetch();
 
+  // Update 'name' field (user-facing title), not 'title' (auto-generated unique ID)
   if (input.title !== undefined) {
-    Object.assign(entry, { title: input.title });
+    Object.assign(entry, { name: input.title });
   }
   if (input.description !== undefined) {
     Object.assign(entry, { description: input.description });

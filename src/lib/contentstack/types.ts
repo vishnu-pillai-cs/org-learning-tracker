@@ -49,7 +49,8 @@ export interface Team extends ContentstackEntry {
 
 // Learning Entry Content Type
 export interface LearningEntry extends ContentstackEntry {
-  title: string;
+  title: string; // Auto-generated unique ID
+  name: string; // User-facing learning title
   description?: string;
   type: LearningType;
   source_url?: string;
@@ -221,6 +222,7 @@ export interface TeamEntryData extends EntryData {
 }
 
 export interface LearningEntryData extends EntryData {
+  name: string; // User-facing learning title
   description?: string;
   type: LearningType;
   source_url?: string;

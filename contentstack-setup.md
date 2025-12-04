@@ -36,7 +36,8 @@ Create these content types in your Contentstack stack. Go to **Content Models** 
 
 | Field Name | Field UID | Field Type | Settings |
 |------------|-----------|------------|----------|
-| Title | `title` | Single Line Textbox | Required |
+| Title | `title` | Single Line Textbox | Required (auto-generated unique ID) |
+| Name | `name` | Single Line Textbox | Required (user-facing learning title) |
 | Description | `description` | Rich Text Editor | Optional |
 | Type | `type` | Select | Required, Options: `course`, `article`, `video`, `project`, `other` |
 | Source URL | `source_url` | Single Line Textbox | Optional |

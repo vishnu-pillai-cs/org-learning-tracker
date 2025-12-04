@@ -82,7 +82,7 @@ export default function TeamLearningsPage() {
     const query = searchQuery.toLowerCase();
     const employee = employees[learning.employee[0]?.uid];
     return (
-      learning.title.toLowerCase().includes(query) ||
+      learning.name.toLowerCase().includes(query) ||
       learning.tags?.some((tag) => tag.toLowerCase().includes(query)) ||
       employee?.name?.toLowerCase().includes(query)
     );

@@ -51,7 +51,7 @@ export default function LearningsPage() {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
-      learning.title.toLowerCase().includes(query) ||
+      learning.name.toLowerCase().includes(query) ||
       learning.tags?.some((tag) => tag.toLowerCase().includes(query))
     );
   });

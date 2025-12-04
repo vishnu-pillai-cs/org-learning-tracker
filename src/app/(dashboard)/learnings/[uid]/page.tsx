@@ -56,7 +56,7 @@ export default function LearningDetailPage() {
           const data = await res.json();
           setLearning(data.learning);
           setFormData({
-            title: data.learning.title,
+            title: data.learning.name,
             description: data.learning.description || "",
             type: data.learning.type,
             source_url: data.learning.source_url || "",
@@ -178,7 +178,7 @@ export default function LearningDetailPage() {
 
       <Card>
         <CardHeader className="flex flex-row items-start justify-between">
-          <CardTitle>{isEditing ? "Edit Learning" : learning.title}</CardTitle>
+          <CardTitle>{isEditing ? "Edit Learning" : learning.name}</CardTitle>
           {!isEditing && (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
@@ -386,7 +386,7 @@ export default function LearningDetailPage() {
       >
         <div className="space-y-4">
           <p className="text-slate-600">
-            Are you sure you want to delete &quot;{learning.title}&quot;?
+            Are you sure you want to delete &quot;{learning.name}&quot;?
           </p>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
