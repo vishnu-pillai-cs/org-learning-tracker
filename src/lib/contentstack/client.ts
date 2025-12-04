@@ -72,6 +72,11 @@ export function getEnvironment(): string {
   return process.env.CONTENTSTACK_ENVIRONMENT!;
 }
 
+// Helper to get locale (defaults to "en-us", can be overridden via env)
+export function getLocale(): string {
+  return process.env.CONTENTSTACK_LOCALE ?? "en-us";
+}
+
 // Helper to get a query for a content type
 // Returns Query which is the base type for all query operations
 export function getContentTypeQuery(contentTypeUid: string): Query {

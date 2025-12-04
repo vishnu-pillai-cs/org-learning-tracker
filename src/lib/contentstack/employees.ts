@@ -5,6 +5,7 @@ import {
   getManagementContentType,
   CONTENT_TYPES,
   getEnvironment,
+  getLocale,
 } from "./client";
 import type {
   Employee,
@@ -27,11 +28,14 @@ export async function getEmployees(filters?: EmployeeFilters): Promise<Employee[
   if (filters?.status) {
     query = query.where("status", filters.status);
   }
+  // Reference fields need referenceIn query
   if (filters?.team_uid) {
-    query = query.where("team", filters.team_uid);
+    const refQuery = client.ContentType(CONTENT_TYPES.TEAM).Query().where("uid", filters.team_uid);
+    query = query.referenceIn("team", refQuery);
   }
   if (filters?.manager_uid) {
-    query = query.where("manager", filters.manager_uid);
+    const refQuery = client.ContentType(CONTENT_TYPES.EMPLOYEE).Query().where("uid", filters.manager_uid);
+    query = query.referenceIn("manager", refQuery);
   }
   if (filters?.limit) {
     query = query.limit(filters.limit);
@@ -84,9 +88,10 @@ export async function getEmployeeByEmail(email: string): Promise<Employee | null
 // Get employees by team
 export async function getEmployeesByTeam(teamUid: string): Promise<Employee[]> {
   const client = getDeliveryClient();
+  const refQuery = client.ContentType(CONTENT_TYPES.TEAM).Query().where("uid", teamUid);
   const query: Query = client.ContentType(CONTENT_TYPES.EMPLOYEE).Query();
   const result = await query
-    .where("team", teamUid)
+    .referenceIn("team", refQuery)
     .where("status", "active")
     .toJSON()
     .find();
@@ -98,9 +103,10 @@ export async function getEmployeesByTeam(teamUid: string): Promise<Employee[]> {
 // Get employees by manager
 export async function getEmployeesByManager(managerUid: string): Promise<Employee[]> {
   const client = getDeliveryClient();
+  const refQuery = client.ContentType(CONTENT_TYPES.EMPLOYEE).Query().where("uid", managerUid);
   const query: Query = client.ContentType(CONTENT_TYPES.EMPLOYEE).Query();
   const result = await query
-    .where("manager", managerUid)
+    .referenceIn("manager", refQuery)
     .where("status", "active")
     .toJSON()
     .find();
@@ -148,7 +154,7 @@ export async function createEmployee(input: CreateEmployeeInput): Promise<Employ
   // Publish the entry
   await entry.publish({
     publishDetails: {
-      locales: ["en-us"],
+      locales: [getLocale()],
       environments: [getEnvironment()],
     },
   });
@@ -202,7 +208,7 @@ export async function updateEmployee(
   // Publish the updated entry
   await updated.publish({
     publishDetails: {
-      locales: ["en-us"],
+      locales: [getLocale()],
       environments: [getEnvironment()],
     },
   });
@@ -234,7 +240,7 @@ export async function linkGoogleIdToEmployee(
 
   await updated.publish({
     publishDetails: {
-      locales: ["en-us"],
+      locales: [getLocale()],
       environments: [getEnvironment()],
     },
   });

@@ -4,6 +4,7 @@ import {
   getManagementContentType,
   CONTENT_TYPES,
   getEnvironment,
+  getLocale,
 } from "./client";
 import type {
   LearningEntry,
@@ -30,11 +31,14 @@ export async function getLearnings(filters?: LearningFilters): Promise<LearningE
   const client = getDeliveryClient();
   let query: Query = client.ContentType(CONTENT_TYPES.LEARNING_ENTRY).Query();
 
+  // Reference fields need to be queried by their uid using referenceIn
   if (filters?.employee_uid) {
-    query = query.where("employee", filters.employee_uid);
+    const refQuery = client.ContentType(CONTENT_TYPES.EMPLOYEE).Query().where("uid", filters.employee_uid);
+    query = query.referenceIn("employee", refQuery);
   }
   if (filters?.team_uid) {
-    query = query.where("team", filters.team_uid);
+    const refQuery = client.ContentType(CONTENT_TYPES.TEAM).Query().where("uid", filters.team_uid);
+    query = query.referenceIn("team", refQuery);
   }
   if (filters?.type) {
     query = query.where("type", filters.type);
@@ -156,7 +160,7 @@ export async function createLearning(
   // Publish the entry
   await entry.publish({
     publishDetails: {
-      locales: ["en-us"],
+      locales: [getLocale()],
       environments: [getEnvironment()],
     },
   });
@@ -207,7 +211,7 @@ export async function updateLearning(
   // Publish the updated entry
   await updated.publish({
     publishDetails: {
-      locales: ["en-us"],
+      locales: [getLocale()],
       environments: [getEnvironment()],
     },
   });
@@ -228,7 +232,7 @@ export async function deleteLearning(uid: string): Promise<void> {
   // Unpublish first
   await entry.unpublish({
     publishDetails: {
-      locales: ["en-us"],
+      locales: [getLocale()],
       environments: [getEnvironment()],
     },
   });

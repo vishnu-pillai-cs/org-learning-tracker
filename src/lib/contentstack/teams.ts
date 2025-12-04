@@ -4,6 +4,7 @@ import {
   getManagementContentType,
   CONTENT_TYPES,
   getEnvironment,
+  getLocale,
 } from "./client";
 import type {
   Team,
@@ -52,9 +53,10 @@ export async function getTeamByUid(uid: string): Promise<Team | null> {
 // Get teams by manager UID
 export async function getTeamsByManager(managerUid: string): Promise<Team[]> {
   const client = getDeliveryClient();
+  const refQuery = client.ContentType(CONTENT_TYPES.EMPLOYEE).Query().where("uid", managerUid);
   const query: Query = client.ContentType(CONTENT_TYPES.TEAM).Query();
   const result = await query
-    .where("manager", managerUid)
+    .referenceIn("manager", refQuery)
     .where("status", "active")
     .toJSON()
     .find();
@@ -93,7 +95,7 @@ export async function createTeam(input: CreateTeamInput): Promise<Team> {
   // Publish the entry
   await entry.publish({
     publishDetails: {
-      locales: ["en-us"],
+      locales: [getLocale()],
       environments: [getEnvironment()],
     },
   });
@@ -129,7 +131,7 @@ export async function updateTeam(uid: string, input: UpdateTeamInput): Promise<T
   // Publish the updated entry
   await updated.publish({
     publishDetails: {
-      locales: ["en-us"],
+      locales: [getLocale()],
       environments: [getEnvironment()],
     },
   });

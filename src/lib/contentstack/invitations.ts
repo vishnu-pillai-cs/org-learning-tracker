@@ -5,6 +5,7 @@ import {
   getManagementContentType,
   CONTENT_TYPES,
   getEnvironment,
+  getLocale,
 } from "./client";
 import type {
   Invitation,
@@ -54,9 +55,10 @@ export async function getInvitationByUid(uid: string): Promise<Invitation | null
 // Get pending invitations by team
 export async function getPendingInvitationsByTeam(teamUid: string): Promise<Invitation[]> {
   const client = getDeliveryClient();
+  const refQuery = client.ContentType(CONTENT_TYPES.TEAM).Query().where("uid", teamUid);
   const query: Query = client.ContentType(CONTENT_TYPES.INVITATION).Query();
   const result = await query
-    .where("team", teamUid)
+    .referenceIn("team", refQuery)
     .where("status", "pending")
     .toJSON()
     .find();
@@ -70,9 +72,10 @@ export async function getPendingInvitationsByInviter(
   inviterUid: string
 ): Promise<Invitation[]> {
   const client = getDeliveryClient();
+  const refQuery = client.ContentType(CONTENT_TYPES.EMPLOYEE).Query().where("uid", inviterUid);
   const query: Query = client.ContentType(CONTENT_TYPES.INVITATION).Query();
   const result = await query
-    .where("invited_by", inviterUid)
+    .referenceIn("invited_by", refQuery)
     .where("status", "pending")
     .toJSON()
     .find();
@@ -170,7 +173,7 @@ export async function createInvitation(
   // Publish the entry - this will trigger Contentstack Automate to send email
   await entry.publish({
     publishDetails: {
-      locales: ["en-us"],
+      locales: [getLocale()],
       environments: [getEnvironment()],
     },
   });
@@ -196,7 +199,7 @@ export async function updateInvitationStatus(
 
   await updated.publish({
     publishDetails: {
-      locales: ["en-us"],
+      locales: [getLocale()],
       environments: [getEnvironment()],
     },
   });
@@ -247,7 +250,7 @@ export async function createInvitedEmployee(invitation: Invitation): Promise<str
 
   await entry.publish({
     publishDetails: {
-      locales: ["en-us"],
+      locales: [getLocale()],
       environments: [getEnvironment()],
     },
   });
