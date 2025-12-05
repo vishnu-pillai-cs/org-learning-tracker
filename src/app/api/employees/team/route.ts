@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { isManager } from "@/lib/auth/rbac";
+import { isManager, isAdmin } from "@/lib/auth/rbac";
 import { getEmployeesByTeam } from "@/lib/contentstack/employees";
-import { getTeamsByManager } from "@/lib/contentstack/teams";
+import { getTeamsByManager, getTeams } from "@/lib/contentstack/teams";
 
-// GET /api/employees/team - Get team members (for managers)
+// GET /api/employees/team - Get team members (for managers and org admins)
 export async function GET() {
   const session = await auth();
 
@@ -17,8 +17,10 @@ export async function GET() {
   }
 
   try {
-    // Get all teams managed by this user
-    const teams = await getTeamsByManager(session.user.employeeUid);
+    // Org admins see all teams, managers see only their teams
+    const teams = isAdmin(session.user.role)
+      ? await getTeams("active")
+      : await getTeamsByManager(session.user.employeeUid);
 
     // Get members for each team
     const teamsWithMembers = await Promise.all(
