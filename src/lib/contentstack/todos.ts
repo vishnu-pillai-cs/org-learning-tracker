@@ -1,4 +1,4 @@
-import { getDeliveryClient, getStack, getLocale } from "./client";
+import { getDeliveryClient, getManagementContentType, getLocale, getEnvironment } from "./client";
 import { nanoid } from "nanoid";
 import type {
   LearningTodo,
@@ -7,6 +7,7 @@ import type {
   ContentstackReference,
   TodoStatus,
 } from "./types";
+import type { Entry as ManagementEntry } from "@contentstack/management/types/stack/contentType/entry";
 
 const CONTENT_TYPE = "learning_todo";
 
@@ -67,7 +68,7 @@ export async function getTodoByUid(uid: string): Promise<LearningTodo | null> {
 export async function createTodo(
   input: CreateLearningTodoInput
 ): Promise<LearningTodo | null> {
-  const stack = getStack();
+  const contentType = getManagementContentType(CONTENT_TYPE);
   const locale = getLocale();
 
   const employeeRef: ContentstackReference = {
@@ -90,16 +91,13 @@ export async function createTodo(
   };
 
   try {
-    const entry = await stack
-      .contentType(CONTENT_TYPE)
-      .entry()
-      .create({ entry: entryData as unknown as Record<string, unknown> });
+    const entry: ManagementEntry = await contentType.entry().create({ entry: entryData });
 
     // Publish the entry
     await entry.publish({
       publishDetails: {
         locales: [locale],
-        environments: [process.env.CONTENTSTACK_ENVIRONMENT || "development"],
+        environments: [getEnvironment()],
       },
     });
 
@@ -126,30 +124,22 @@ export async function updateTodoStatus(
   uid: string,
   status: TodoStatus
 ): Promise<LearningTodo | null> {
-  const stack = getStack();
+  const contentType = getManagementContentType(CONTENT_TYPE);
   const locale = getLocale();
 
   try {
-    const entryClient = stack
-      .contentType(CONTENT_TYPE)
-      .entry(uid);
-
-    // Fetch current entry
-    const currentEntry = await entryClient.fetch();
+    const entry: ManagementEntry = await contentType.entry(uid).fetch();
 
     // Update status
-    const updatedData = {
-      ...currentEntry,
-      status,
-    };
+    Object.assign(entry, { status });
 
-    const updatedEntry = await entryClient.update({ entry: updatedData as unknown as Record<string, unknown> });
+    const updatedEntry = await entry.update();
 
     // Publish the updated entry
     await updatedEntry.publish({
       publishDetails: {
         locales: [locale],
-        environments: [process.env.CONTENTSTACK_ENVIRONMENT || "development"],
+        environments: [getEnvironment()],
       },
     });
 
@@ -176,18 +166,18 @@ export async function updateTodoStatus(
  * Delete a todo by UID
  */
 export async function deleteTodo(uid: string): Promise<boolean> {
-  const stack = getStack();
+  const contentType = getManagementContentType(CONTENT_TYPE);
   const locale = getLocale();
 
   try {
-    const entry = stack.contentType(CONTENT_TYPE).entry(uid);
+    const entry: ManagementEntry = await contentType.entry(uid).fetch();
     
     // Unpublish first (required before deletion)
     try {
       await entry.unpublish({
         publishDetails: {
           locales: [locale],
-          environments: [process.env.CONTENTSTACK_ENVIRONMENT || "development"],
+          environments: [getEnvironment()],
         },
       });
     } catch (unpublishError) {

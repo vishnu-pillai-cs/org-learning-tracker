@@ -1,4 +1,4 @@
-import { getDeliveryClient, getStack, getLocale } from "./client";
+import { getDeliveryClient, getManagementContentType, getLocale, getEnvironment } from "./client";
 import { nanoid } from "nanoid";
 import type {
   LearningSuggestion,
@@ -6,6 +6,7 @@ import type {
   CreateLearningSuggestionInput,
   ContentstackReference,
 } from "./types";
+import type { Entry as ManagementEntry } from "@contentstack/management/types/stack/contentType/entry";
 
 const CONTENT_TYPE = "learning_suggestion";
 
@@ -41,7 +42,7 @@ export async function getSuggestionsByEmployee(
 export async function createSuggestion(
   input: CreateLearningSuggestionInput
 ): Promise<LearningSuggestion | null> {
-  const stack = getStack();
+  const contentType = getManagementContentType(CONTENT_TYPE);
   const locale = getLocale();
 
   const employeeRef: ContentstackReference = {
@@ -63,16 +64,13 @@ export async function createSuggestion(
   };
 
   try {
-    const entry = await stack
-      .contentType(CONTENT_TYPE)
-      .entry()
-      .create({ entry: entryData as unknown as Record<string, unknown> });
+    const entry: ManagementEntry = await contentType.entry().create({ entry: entryData });
 
     // Publish the entry
     await entry.publish({
       publishDetails: {
         locales: [locale],
-        environments: [process.env.CONTENTSTACK_ENVIRONMENT || "development"],
+        environments: [getEnvironment()],
       },
     });
 
@@ -118,18 +116,18 @@ export async function deleteSuggestionsByEmployee(
  * Delete a single suggestion by UID
  */
 export async function deleteSuggestion(uid: string): Promise<boolean> {
-  const stack = getStack();
+  const contentType = getManagementContentType(CONTENT_TYPE);
   const locale = getLocale();
 
   try {
-    const entry = stack.contentType(CONTENT_TYPE).entry(uid);
+    const entry: ManagementEntry = await contentType.entry(uid).fetch();
     
     // Unpublish first (required before deletion)
     try {
       await entry.unpublish({
         publishDetails: {
           locales: [locale],
-          environments: [process.env.CONTENTSTACK_ENVIRONMENT || "development"],
+          environments: [getEnvironment()],
         },
       });
     } catch (unpublishError) {
