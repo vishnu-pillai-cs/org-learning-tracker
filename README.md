@@ -14,6 +14,7 @@ A modern web application for tracking employee learning and development across a
 - 📊 View personal learning statistics and progress
 - 🏷️ Tag and categorize learnings
 - 📈 Track learning hours and trends
+- 💡 AI-powered learning suggestions based on your history
 
 ### For Managers
 - 👥 View team learning statistics
@@ -34,6 +35,7 @@ A modern web application for tracking employee learning and development across a
 - **Styling**: Tailwind CSS 4
 - **CMS**: Contentstack (Delivery + Management SDK)
 - **Authentication**: NextAuth.js with Google OAuth
+- **AI**: Mastra Agent with Anthropic Claude for learning suggestions
 - **Deployment**: Contentstack Launch
 
 ## Prerequisites
@@ -80,6 +82,7 @@ CONTENTSTACK_API_KEY=your_api_key
 CONTENTSTACK_DELIVERY_TOKEN=your_delivery_token
 CONTENTSTACK_MANAGEMENT_TOKEN=your_management_token
 CONTENTSTACK_ENVIRONMENT=development
+CONTENTSTACK_LOCALE=en-us
 
 # Google OAuth
 GOOGLE_CLIENT_ID=your_google_client_id
@@ -88,6 +91,10 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 # NextAuth
 NEXTAUTH_SECRET=your_random_secret
 NEXTAUTH_URL=http://localhost:6767
+
+# AI Suggestions (Optional)
+ANTHROPIC_API_KEY=your_anthropic_api_key
+BRAVE_SEARCH_API_KEY=your_brave_api_key  # Get free key at brave.com/search/api (2000/month free)
 ```
 
 ### 5. Create your admin user
@@ -131,7 +138,8 @@ src/
 │   └── *.tsx             # Feature components
 └── lib/
     ├── auth/             # NextAuth configuration
-    └── contentstack/     # Contentstack SDK helpers
+    ├── contentstack/     # Contentstack SDK helpers
+    └── mastra/           # Mastra Agent for AI suggestions
 ```
 
 ## API Routes
@@ -152,6 +160,7 @@ src/
 | `/api/stats/me` | GET | Personal statistics |
 | `/api/stats/team/[uid]` | GET | Team statistics |
 | `/api/stats/org` | GET | Organization statistics |
+| `/api/suggestions` | GET | AI-powered learning suggestions |
 
 ## Role-Based Access
 

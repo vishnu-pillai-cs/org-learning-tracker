@@ -182,12 +182,23 @@ export interface EmployeeFilters {
 }
 
 // Stats types
+export interface LearningsByDate {
+  date: string;
+  count: number;
+  hours: number;
+}
+
 export interface EmployeeStats {
   total_learnings: number;
   total_hours: number;
   learnings_by_type: Record<LearningType, number>;
+  hours_by_type: Record<LearningType, number>;
   top_tags: { tag: string; count: number }[];
   recent_learnings: LearningEntry[];
+  learnings_by_date: LearningsByDate[];
+  current_streak: number;
+  longest_streak: number;
+  avg_session_minutes: number;
 }
 
 export interface TeamStats extends EmployeeStats {
@@ -243,5 +254,243 @@ export interface InvitationEntryData extends EntryData {
   invited_by: ContentstackReference[];
   status: InvitationStatus;
   expires_at: string;
+}
+
+// Learning Suggestion Content Type
+export interface LearningSuggestion extends ContentstackEntry {
+  title: string; // Unique identifier
+  topic: string;
+  reason: string;
+  type: LearningType; // course, article, video, project, other
+  resource_title?: string;
+  resource_description?: string;
+  resource_url?: string;
+  resource_image_url?: string;
+  estimated_minutes?: number;
+  employee: ContentstackReference[];
+}
+
+// Learning Todo Content Type
+export type TodoStatus = "pending" | "completed";
+
+export interface LearningTodo extends ContentstackEntry {
+  title: string; // Unique identifier
+  topic: string;
+  reason: string;
+  type: LearningType; // course, article, video, project, other
+  resource_title?: string;
+  resource_description?: string;
+  resource_url?: string;
+  resource_image_url?: string;
+  estimated_minutes?: number;
+  status: TodoStatus;
+  employee: ContentstackReference[];
+}
+
+// Entry Data types for Management SDK
+export interface LearningSuggestionEntryData extends EntryData {
+  topic: string;
+  reason: string;
+  type: LearningType;
+  resource_title?: string;
+  resource_description?: string;
+  resource_url?: string;
+  resource_image_url?: string;
+  estimated_minutes?: number;
+  employee: ContentstackReference[];
+}
+
+export interface LearningTodoEntryData extends EntryData {
+  topic: string;
+  reason: string;
+  type: LearningType;
+  resource_title?: string;
+  resource_description?: string;
+  resource_url?: string;
+  resource_image_url?: string;
+  estimated_minutes?: number;
+  status: TodoStatus;
+  employee: ContentstackReference[];
+}
+
+// Input types for creating suggestions and todos
+export interface CreateLearningSuggestionInput {
+  topic: string;
+  reason: string;
+  type: LearningType;
+  resource_title?: string;
+  resource_description?: string;
+  resource_url?: string;
+  resource_image_url?: string;
+  estimated_minutes?: number;
+  employee_uid: string;
+}
+
+export interface CreateLearningTodoInput {
+  topic: string;
+  reason: string;
+  type: LearningType;
+  resource_title?: string;
+  resource_description?: string;
+  resource_url?: string;
+  resource_image_url?: string;
+  estimated_minutes?: number;
+  employee_uid: string;
+}
+
+// ============================================
+// Pre-computed Stats Content Types
+// ============================================
+
+// Activity date entry for time-series data
+export interface ActivityDateEntry {
+  date: string;
+  count: number;
+  minutes: number;
+}
+
+// Top learner entry for leaderboards
+export interface TopLearnerEntry {
+  uid: string;
+  name: string;
+  count: number;
+  hours: number;
+}
+
+// Top team entry for org leaderboards
+export interface TopTeamEntry {
+  uid: string;
+  name: string;
+  count: number;
+  hours: number;
+}
+
+// Employee Stats Content Type (stored in Contentstack)
+export interface EmployeeStatsEntry extends ContentstackEntry {
+  title: string; // "stats-{employee_uid}"
+  employee: ContentstackReference[];
+  total_learnings: number;
+  total_minutes: number;
+  current_streak: number;
+  longest_streak: number;
+  last_learning_date: string; // ISO date string
+  learnings_by_type: string; // JSON string: Record<LearningType, number>
+  hours_by_type: string; // JSON string: Record<LearningType, number>
+  activity_dates: string; // JSON string: ActivityDateEntry[] (last 90 days)
+  computed_at: string; // ISO timestamp
+}
+
+// Team Stats Content Type (stored in Contentstack)
+export interface TeamStatsEntry extends ContentstackEntry {
+  title: string; // "stats-{team_uid}"
+  team: ContentstackReference[];
+  total_learnings: number;
+  total_minutes: number;
+  active_learners: number; // Employees with activity this period
+  learnings_by_type: string; // JSON string
+  hours_by_type: string; // JSON string
+  activity_dates: string; // JSON string: ActivityDateEntry[]
+  top_learners: string; // JSON string: TopLearnerEntry[]
+  computed_at: string;
+}
+
+// Org Stats Content Type (stored in Contentstack)
+export interface OrgStatsEntry extends ContentstackEntry {
+  title: string; // "org-stats"
+  total_learnings: number;
+  total_minutes: number;
+  total_active_employees: number;
+  total_active_teams: number;
+  learnings_by_type: string; // JSON string
+  hours_by_type: string; // JSON string
+  activity_dates: string; // JSON string: ActivityDateEntry[]
+  top_teams: string; // JSON string: TopTeamEntry[]
+  top_learners: string; // JSON string: TopLearnerEntry[]
+  computed_at: string;
+}
+
+// Entry Data types for Management SDK (creating/updating stats)
+export interface EmployeeStatsEntryData extends EntryData {
+  employee: ContentstackReference[];
+  total_learnings: number;
+  total_minutes: number;
+  current_streak: number;
+  longest_streak: number;
+  last_learning_date: string;
+  learnings_by_type: string;
+  hours_by_type: string;
+  activity_dates: string;
+  computed_at: string;
+}
+
+export interface TeamStatsEntryData extends EntryData {
+  team: ContentstackReference[];
+  total_learnings: number;
+  total_minutes: number;
+  active_learners: number;
+  learnings_by_type: string;
+  hours_by_type: string;
+  activity_dates: string;
+  top_learners: string;
+  computed_at: string;
+}
+
+export interface OrgStatsEntryData extends EntryData {
+  total_learnings: number;
+  total_minutes: number;
+  total_active_employees: number;
+  total_active_teams: number;
+  learnings_by_type: string;
+  hours_by_type: string;
+  activity_dates: string;
+  top_teams: string;
+  top_learners: string;
+  computed_at: string;
+}
+
+// Parsed stats types (after JSON parsing, for use in application)
+export interface ParsedEmployeeStats {
+  uid: string;
+  employee_uid: string;
+  total_learnings: number;
+  total_minutes: number;
+  total_hours: number;
+  current_streak: number;
+  longest_streak: number;
+  last_learning_date: string | null;
+  learnings_by_type: Record<string, number>;
+  hours_by_type: Record<string, number>;
+  activity_dates: ActivityDateEntry[];
+  avg_session_minutes: number;
+  computed_at: string;
+}
+
+export interface ParsedTeamStats {
+  uid: string;
+  team_uid: string;
+  total_learnings: number;
+  total_minutes: number;
+  total_hours: number;
+  active_learners: number;
+  learnings_by_type: Record<string, number>;
+  hours_by_type: Record<string, number>;
+  activity_dates: ActivityDateEntry[];
+  top_learners: TopLearnerEntry[];
+  computed_at: string;
+}
+
+export interface ParsedOrgStats {
+  uid: string;
+  total_learnings: number;
+  total_minutes: number;
+  total_hours: number;
+  total_active_employees: number;
+  total_active_teams: number;
+  learnings_by_type: Record<string, number>;
+  hours_by_type: Record<string, number>;
+  activity_dates: ActivityDateEntry[];
+  top_teams: TopTeamEntry[];
+  top_learners: TopLearnerEntry[];
+  computed_at: string;
 }
 

@@ -6,10 +6,15 @@
     "dev": "next dev --port 6767",
     "build": "next build",
     "start": "next start --port 6767",
-    "lint": "eslint"
+    "lint": "eslint",
+    "setup:stats-types": "bun scripts/create-stats-content-types.ts"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.53",
+    "@ai-sdk/google": "^2.0.44",
+    "@ai-sdk/openai": "^2.0.77",
     "@contentstack/management": "^1.25.1",
+    "@mastra/core": "^0.24.6",
     "clsx": "^2.1.1",
     "contentstack": "^3.26.2",
     "nanoid": "^5.1.6",
@@ -17,7 +22,9 @@
     "next-auth": "^5.0.0-beta.30",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "tailwind-merge": "^3.4.0"
+    "recharts": "^3.5.1",
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

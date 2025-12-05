@@ -65,6 +65,11 @@ export const CONTENT_TYPES = {
   TEAM: "team",
   LEARNING_ENTRY: "learning_entry",
   INVITATION: "invitation",
+  LEARNING_SUGGESTION: "learning_suggestion",
+  LEARNING_TODO: "learning_todo",
+  EMPLOYEE_STATS: "employee_stats",
+  TEAM_STATS: "team_stats",
+  ORG_STATS: "org_stats",
 } as const;
 
 // Helper to get environment name

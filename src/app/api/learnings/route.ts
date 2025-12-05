@@ -5,9 +5,9 @@ import {
   getLearnings,
   getLearningsByEmployee,
   getLearningsByTeams,
-  createLearning,
+  createLearningWithStats,
 } from "@/lib/contentstack/learnings";
-import { getTeamsByManager } from "@/lib/contentstack/teams";
+import { getTeamsByManager, getTeamByUid } from "@/lib/contentstack/teams";
 import type { CreateLearningInput, LearningFilters, LearningEntry } from "@/lib/contentstack/types";
 
 // GET /api/learnings - Get learnings (filtered by role)
@@ -102,21 +102,51 @@ export async function POST(req: NextRequest) {
     };
 
     // Validate required fields
-    if (!input.title || !input.type || !input.date) {
+    if (!input.title || !input.type || !input.date || !input.duration_minutes) {
       return NextResponse.json(
-        { error: "Title, type, and date are required" },
+        { error: "Title, type, date, and duration are required" },
         { status: 400 }
       );
     }
 
-    // Create learning entry linked to current user
-    const learning = await createLearning(
+    // Get team name if team exists (for stats tracking)
+    let teamName: string | undefined;
+    if (session.user.teamUid) {
+      const team = await getTeamByUid(session.user.teamUid);
+      teamName = team?.name;
+    }
+
+    // Create learning entry with stats update and return both
+    const result = await createLearningWithStats(
       input,
       session.user.employeeUid,
-      session.user.teamUid
+      session.user.teamUid,
+      session.user.name,
+      teamName
     );
 
-    return NextResponse.json({ learning }, { status: 201 });
+    // Transform stats for dashboard format
+    const dashboardStats = {
+      total_learnings: result.stats.total_learnings,
+      total_hours: result.stats.total_hours,
+      learnings_by_type: result.stats.learnings_by_type,
+      hours_by_type: result.stats.hours_by_type,
+      learnings_by_date: result.stats.activity_dates.map((d) => ({
+        date: d.date,
+        count: d.count,
+        hours: Math.round((d.minutes / 60) * 10) / 10,
+      })),
+      current_streak: result.stats.current_streak,
+      longest_streak: result.stats.longest_streak,
+      avg_session_minutes: result.stats.avg_session_minutes,
+      top_tags: [], // Not tracked in pre-computed stats
+      recent_learnings: [], // Not stored in pre-computed stats
+    };
+
+    return NextResponse.json(
+      { learning: result.learning, stats: dashboardStats },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Failed to create learning:", error);
     return NextResponse.json(

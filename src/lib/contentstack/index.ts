@@ -5,4 +5,5 @@ export * from "./employees";
 export * from "./teams";
 export * from "./learnings";
 export * from "./invitations";
+export * from "./stats";
 

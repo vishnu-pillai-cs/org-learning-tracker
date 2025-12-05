@@ -14,8 +14,10 @@ import type {
   LearningFilters,
   LearningEntryData,
   ContentstackReference,
+  ParsedEmployeeStats,
 } from "./types";
 import type { Entry as ManagementEntry } from "@contentstack/management/types/stack/contentType/entry";
+import { cascadeStatsUpdate } from "./stats";
 
 // Helper to build employee reference
 function buildEmployeeReference(employeeUid: string): ContentstackReference[] {
@@ -148,8 +150,8 @@ export async function getLearningsByTeams(
   return entries ?? [];
 }
 
-// Create learning entry
-export async function createLearning(
+// Create learning entry (internal helper - does not update stats)
+async function createLearningEntry(
   input: CreateLearningInput,
   employeeUid: string,
   teamUid?: string
@@ -191,11 +193,58 @@ export async function createLearning(
   return await waitForEntry(entry.uid);
 }
 
+// Create learning entry (public API - updates stats)
+export async function createLearning(
+  input: CreateLearningInput,
+  employeeUid: string,
+  teamUid?: string,
+  employeeName?: string,
+  teamName?: string
+): Promise<LearningEntry> {
+  // Create the learning entry
+  const learning = await createLearningEntry(input, employeeUid, teamUid);
+
+  // Cascade stats update (fire and don't wait to avoid blocking)
+  // Stats are updated in the background
+  cascadeStatsUpdate(learning, employeeUid, teamUid, "add", employeeName, teamName).catch((err) => {
+    console.error("Failed to cascade stats update:", err);
+  });
+
+  return learning;
+}
+
+// Create learning and return with updated stats (for immediate UI update)
+export async function createLearningWithStats(
+  input: CreateLearningInput,
+  employeeUid: string,
+  teamUid?: string,
+  employeeName?: string,
+  teamName?: string
+): Promise<{ learning: LearningEntry; stats: ParsedEmployeeStats }> {
+  // Create the learning entry
+  const learning = await createLearningEntry(input, employeeUid, teamUid);
+
+  // Cascade stats update and wait for employee stats
+  const statsResult = await cascadeStatsUpdate(learning, employeeUid, teamUid, "add", employeeName, teamName);
+
+  return {
+    learning,
+    stats: statsResult.employee,
+  };
+}
+
 // Update learning entry
 export async function updateLearning(
   uid: string,
-  input: UpdateLearningInput
+  input: UpdateLearningInput,
+  employeeUid?: string,
+  teamUid?: string,
+  employeeName?: string,
+  teamName?: string
 ): Promise<LearningEntry> {
+  // Get the old learning first (for stats adjustment)
+  const oldLearning = await getLearningByUid(uid);
+  
   const contentType = getManagementContentType(CONTENT_TYPES.LEARNING_ENTRY);
   const entry: ManagementEntry = await contentType.entry(uid).fetch();
 
@@ -236,11 +285,46 @@ export async function updateLearning(
   });
 
   // Wait for updated entry to be available in Delivery API
-  return await waitForEntry(uid);
+  const updatedLearning = await waitForEntry(uid);
+
+  // If type, duration, or date changed, adjust stats
+  if (oldLearning && employeeUid) {
+    const typeChanged = input.type !== undefined && oldLearning.type !== input.type;
+    const durationChanged = input.duration_minutes !== undefined && oldLearning.duration_minutes !== input.duration_minutes;
+    const dateChanged = input.date !== undefined && oldLearning.date !== input.date;
+
+    if (typeChanged || durationChanged || dateChanged) {
+      // Decrement old values, increment new values
+      const empUid = employeeUid || oldLearning.employee[0]?.uid;
+      const tUid = teamUid || oldLearning.team?.[0]?.uid;
+      
+      if (empUid) {
+        // Remove old stats contribution
+        cascadeStatsUpdate(oldLearning, empUid, tUid, "remove", employeeName, teamName).catch((err) => {
+          console.error("Failed to remove old stats:", err);
+        });
+        // Add new stats contribution
+        cascadeStatsUpdate(updatedLearning, empUid, tUid, "add", employeeName, teamName).catch((err) => {
+          console.error("Failed to add new stats:", err);
+        });
+      }
+    }
+  }
+
+  return updatedLearning;
 }
 
 // Delete learning entry
-export async function deleteLearning(uid: string): Promise<void> {
+export async function deleteLearning(
+  uid: string,
+  employeeUid?: string,
+  teamUid?: string,
+  employeeName?: string,
+  teamName?: string
+): Promise<void> {
+  // Get the learning first (need values for stats decrement)
+  const learning = await getLearningByUid(uid);
+  
   const contentType = getManagementContentType(CONTENT_TYPES.LEARNING_ENTRY);
   const entry: ManagementEntry = await contentType.entry(uid).fetch();
 
@@ -254,6 +338,79 @@ export async function deleteLearning(uid: string): Promise<void> {
 
   // Then delete
   await entry.delete();
+
+  // Cascade stats decrement
+  if (learning) {
+    const empUid = employeeUid || learning.employee[0]?.uid;
+    const tUid = teamUid || learning.team?.[0]?.uid;
+    
+    if (empUid) {
+      cascadeStatsUpdate(learning, empUid, tUid, "remove", employeeName, teamName).catch((err) => {
+        console.error("Failed to cascade stats decrement:", err);
+      });
+    }
+  }
+}
+
+// Helper to calculate streaks from learning dates
+function calculateStreaks(learnings: LearningEntry[]): { current: number; longest: number } {
+  if (learnings.length === 0) return { current: 0, longest: 0 };
+
+  // Get unique dates sorted descending (most recent first)
+  const uniqueDates = [...new Set(learnings.map((l) => l.date))].sort(
+    (a, b) => new Date(b).getTime() - new Date(a).getTime()
+  );
+
+  if (uniqueDates.length === 0) return { current: 0, longest: 0 };
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const mostRecentDate = new Date(uniqueDates[0]);
+  mostRecentDate.setHours(0, 0, 0, 0);
+
+  // Check if streak is still active (learned today or yesterday)
+  const isStreakActive =
+    mostRecentDate.getTime() === today.getTime() ||
+    mostRecentDate.getTime() === yesterday.getTime();
+
+  let currentStreak = 0;
+  let longestStreak = 0;
+  let tempStreak = 1;
+
+  // Calculate streaks
+  for (let i = 0; i < uniqueDates.length; i++) {
+    if (i === 0) {
+      tempStreak = 1;
+      continue;
+    }
+
+    const prevDate = new Date(uniqueDates[i - 1]);
+    const currDate = new Date(uniqueDates[i]);
+    const diffDays = Math.round(
+      (prevDate.getTime() - currDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (diffDays === 1) {
+      tempStreak++;
+    } else {
+      if (i === 1 || (i > 1 && currentStreak === 0)) {
+        currentStreak = isStreakActive ? tempStreak : 0;
+      }
+      longestStreak = Math.max(longestStreak, tempStreak);
+      tempStreak = 1;
+    }
+  }
+
+  // Final check for last streak
+  longestStreak = Math.max(longestStreak, tempStreak);
+  if (currentStreak === 0 && isStreakActive) {
+    currentStreak = tempStreak;
+  }
+
+  return { current: currentStreak, longest: longestStreak };
 }
 
 // Get learning stats for an employee
@@ -278,6 +435,20 @@ export async function getEmployeeLearningStats(employeeUid: string, days = 30) {
     {} as Record<string, number>
   );
 
+  // Hours by type
+  const hoursByType = learnings.reduce(
+    (acc, l) => {
+      acc[l.type] = (acc[l.type] ?? 0) + (l.duration_minutes ?? 0) / 60;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  // Round hours by type
+  Object.keys(hoursByType).forEach((key) => {
+    hoursByType[key] = Math.round(hoursByType[key] * 10) / 10;
+  });
+
   const tagCounts: Record<string, number> = {};
   learnings.forEach((l) => {
     l.tags?.forEach((tag) => {
@@ -290,12 +461,59 @@ export async function getEmployeeLearningStats(employeeUid: string, days = 30) {
     .slice(0, 10)
     .map(([tag, count]) => ({ tag, count }));
 
+  // Build learnings by date for time-series chart
+  const learningsByDate: Record<string, { count: number; hours: number }> = {};
+  
+  // Initialize all dates in range with zero values
+  for (let i = 0; i < days; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split("T")[0];
+    learningsByDate[dateStr] = { count: 0, hours: 0 };
+  }
+
+  // Populate with actual data
+  learnings.forEach((l) => {
+    const dateStr = l.date.split("T")[0];
+    if (learningsByDate[dateStr]) {
+      learningsByDate[dateStr].count++;
+      learningsByDate[dateStr].hours += (l.duration_minutes ?? 0) / 60;
+    }
+  });
+
+  // Convert to sorted array (oldest first for chart)
+  const learningsByDateArray = Object.entries(learningsByDate)
+    .map(([date, data]) => ({
+      date,
+      count: data.count,
+      hours: Math.round(data.hours * 10) / 10,
+    }))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Calculate streaks (need all learnings for accurate streak, not just last 30 days)
+  const allLearnings = await getLearningsByEmployee(employeeUid, { limit: 500 });
+  const streaks = calculateStreaks(allLearnings);
+
+  // Average session length
+  const avgSessionMinutes =
+    learnings.length > 0
+      ? Math.round(
+          learnings.reduce((sum, l) => sum + (l.duration_minutes ?? 0), 0) /
+            learnings.length
+        )
+      : 0;
+
   return {
     total_learnings: learnings.length,
     total_hours: Math.round(totalHours * 10) / 10,
     learnings_by_type: byType,
+    hours_by_type: hoursByType,
     top_tags: topTags,
     recent_learnings: learnings.slice(0, 5),
+    learnings_by_date: learningsByDateArray,
+    current_streak: streaks.current,
+    longest_streak: streaks.longest,
+    avg_session_minutes: avgSessionMinutes,
   };
 }
 

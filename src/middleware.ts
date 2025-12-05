@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 
 // Routes that don't require authentication
-const publicRoutes = ["/", "/login", "/invite/accept"];
+const publicRoutes = ["/login", "/invite/accept"];
 const authRoutes = ["/login"];
 
 export default auth((req) => {
@@ -15,6 +15,7 @@ export default auth((req) => {
   const isAuthRoute = authRoutes.includes(nextUrl.pathname);
   const isApiRoute = nextUrl.pathname.startsWith("/api");
   const isInviteRoute = nextUrl.pathname.startsWith("/invite");
+  const isHomePage = nextUrl.pathname === "/";
 
   // Allow API routes to handle their own auth
   if (isApiRoute) {
@@ -26,9 +27,18 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
-  // Redirect logged-in users away from auth routes
+  // Redirect logged-in users away from auth routes to dashboard
   if (isAuthRoute && isLoggedIn) {
     return NextResponse.redirect(new URL("/dashboard", nextUrl));
+  }
+
+  // Redirect home page based on auth status
+  if (isHomePage) {
+    if (isLoggedIn) {
+      return NextResponse.redirect(new URL("/dashboard", nextUrl));
+    } else {
+      return NextResponse.redirect(new URL("/login", nextUrl));
+    }
   }
 
   // Allow public routes

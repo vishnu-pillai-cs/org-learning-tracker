@@ -405,4 +405,3 @@ export default function LearningDetailPage() {
     </div>
   );
 }
-

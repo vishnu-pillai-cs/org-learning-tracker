@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLearnings, useTodos } from "@/lib/context";
 import type { LearningType, LearningVisibility } from "@/lib/contentstack/types";
 
 const typeOptions = [
@@ -25,6 +26,10 @@ const visibilityOptions = [
 
 export default function NewLearningPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { addWithSuggestions } = useLearnings();
+  const { remove: removeTodo } = useTodos();
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,17 +44,53 @@ export default function NewLearningPage() {
     visibility: "team" as LearningVisibility,
   });
 
+  // Pre-fill form from URL params (from completed todo)
+  useEffect(() => {
+    const topic = searchParams.get("topic");
+    const description = searchParams.get("description");
+    const type = searchParams.get("type");
+    const sourceUrl = searchParams.get("source_url");
+    const durationMinutes = searchParams.get("duration_minutes");
+
+    if (topic || description || type || sourceUrl || durationMinutes) {
+      setFormData((prev) => ({
+        ...prev,
+        title: topic || prev.title,
+        description: description || prev.description,
+        type: (type as LearningType) || prev.type,
+        source_url: sourceUrl || prev.source_url,
+        duration_minutes: durationMinutes || prev.duration_minutes,
+      }));
+    }
+  }, [searchParams]);
+
+  // Validate form
+  const isFormValid = () => {
+    return formData.title.trim() !== "" && formData.date.trim() !== "";
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate mandatory fields
+    if (!formData.title.trim()) {
+      setError("Title is required");
+      return;
+    }
+    if (!formData.date.trim()) {
+      setError("Date is required");
+      return;
+    }
+    
     setIsSubmitting(true);
     setError(null);
 
     try {
       const payload = {
-        title: formData.title,
-        description: formData.description || undefined,
+        title: formData.title.trim(),
+        description: formData.description.trim() || undefined,
         type: formData.type,
-        source_url: formData.source_url || undefined,
+        source_url: formData.source_url.trim() || undefined,
         date: formData.date,
         duration_minutes: formData.duration_minutes
           ? parseInt(formData.duration_minutes)
@@ -60,18 +101,21 @@ export default function NewLearningPage() {
         visibility: formData.visibility,
       };
 
-      const res = await fetch("/api/learnings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      // Use context to add learning and trigger suggestion generation
+      const learning = await addWithSuggestions(payload);
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to create learning entry");
+      if (!learning) {
+        throw new Error("Failed to create learning entry");
       }
 
-      router.push("/learnings");
+      // If this came from a todo, delete it
+      const todoUid = searchParams.get("todo_uid");
+      if (todoUid) {
+        await removeTodo(todoUid);
+      }
+
+      // Navigate to dashboard - suggestions will be generated in the background
+      router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
       setIsSubmitting(false);
@@ -217,7 +261,11 @@ export default function NewLearningPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" isLoading={isSubmitting}>
+              <Button 
+                type="submit" 
+                isLoading={isSubmitting}
+                disabled={!isFormValid() || isSubmitting}
+              >
                 Save Learning
               </Button>
             </div>
@@ -227,4 +275,3 @@ export default function NewLearningPage() {
     </div>
   );
 }
-
