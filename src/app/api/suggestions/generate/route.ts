@@ -40,6 +40,7 @@ export async function POST() {
     const learningContext: LearningContext[] = recentLearnings.map((l) => ({
       name: l.name,
       type: l.type,
+      description: l.description,
       tags: l.tags,
       date: l.date,
     }));

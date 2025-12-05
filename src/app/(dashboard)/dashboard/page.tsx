@@ -150,14 +150,12 @@ export default function DashboardPage() {
             Here&apos;s your learning journey at a glance
           </p>
         </div>
-        <Link href="/learnings/new">
-          <Button>
-            <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Add Learning
-          </Button>
-        </Link>
+        <Button onClick={() => router.push("/learnings/new")}>
+          <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Learning
+        </Button>
       </div>
 
       {/* Bento Grid Layout */}
@@ -513,14 +511,41 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : pendingTodos.length > 0 ? (
-              <div className="divide-y divide-emerald-100/60">
+              <div className="p-3 space-y-2">
                 {pendingTodos.map((todo) => (
-                  <div key={todo.uid} className="group p-4 hover:bg-white transition-colors">
+                  <div
+                    key={todo.uid}
+                    className="group p-3 rounded-xl transition-all duration-200 hover:bg-white hover:shadow-md border border-transparent hover:border-emerald-100 bg-white/50"
+                  >
                     <div className="flex gap-3">
-                      <SuggestionThumbnail imageUrl={todo.resource.imageUrl} topic={todo.topic} size="sm" />
+                      <a 
+                        href={todo.resource.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="flex-shrink-0 relative group/thumb"
+                      >
+                        <SuggestionThumbnail imageUrl={todo.resource.imageUrl} topic={todo.topic} size="sm" />
+                        <div className="absolute inset-0 rounded-lg bg-emerald-900/60 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
+                          <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        </div>
+                      </a>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm text-slate-900 line-clamp-1">{todo.topic}</h3>
-                        <div className="flex items-center gap-2 mt-1 text-[11px]">
+                        <a
+                          href={todo.resource.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block"
+                        >
+                          <h3 className="font-medium text-sm text-slate-900 line-clamp-1 group-hover:text-emerald-600 transition-colors">
+                            {todo.topic}
+                          </h3>
+                        </a>
+                        {todo.reason && (
+                          <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{todo.reason}</p>
+                        )}
+                        <div className="flex items-center gap-3 mt-1.5 text-[10px]">
                           {todo.estimated_minutes && (
                             <span className="flex items-center gap-1 text-emerald-600 font-medium">
                               <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -530,15 +555,23 @@ export default function DashboardPage() {
                             </span>
                           )}
                           {todo.resource.url && (
-                            <span className="text-slate-400 truncate max-w-[80px]">
-                              {getSourceFromUrl(todo.resource.url)}
-                            </span>
+                            <a
+                              href={todo.resource.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-slate-400 hover:text-emerald-500 transition-colors"
+                            >
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                              </svg>
+                              <span className="truncate max-w-[60px]">{getSourceFromUrl(todo.resource.url)}</span>
+                            </a>
                           )}
                         </div>
                         <div className="flex items-center gap-2 mt-2">
                           <button
                             onClick={() => handleCompleteClick(todo)}
-                            className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-white bg-emerald-500 rounded-md hover:bg-emerald-600 transition-colors"
+                            className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-colors shadow-sm"
                           >
                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -547,7 +580,7 @@ export default function DashboardPage() {
                           </button>
                           <button
                             onClick={() => handleRemoveTodo(todo.uid)}
-                            className="px-2 py-1 text-[11px] text-slate-400 hover:text-red-500 transition-colors"
+                            className="px-2 py-1 text-[10px] text-slate-400 hover:text-red-500 transition-colors"
                           >
                             Remove
                           </button>
@@ -576,55 +609,50 @@ export default function DashboardPage() {
           <CardHeader className="pb-3 border-b border-violet-100/60 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md shadow-violet-200">
-                  <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
+                <div className={`h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-md shadow-violet-200 ${isGenerating ? 'animate-pulse' : ''}`}>
+                  {isGenerating ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  ) : (
+                    <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  )}
                 </div>
                 <div>
                   <CardTitle className="text-sm font-semibold text-slate-900">AI Suggestions</CardTitle>
-                  <p className="text-[10px] text-slate-500">Personalized for you</p>
+                  <p className="text-[10px] text-slate-500">
+                    {isGenerating ? (
+                      <span className="inline-flex items-center gap-1">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-violet-500"></span>
+                        </span>
+                        Generating...
+                      </span>
+                    ) : (
+                      "Personalized for you"
+                    )}
+                  </p>
                 </div>
               </div>
+              {isGenerating && (
+                <div className="flex items-end gap-0.5 h-5">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="w-1 rounded-full bg-gradient-to-t from-violet-500 to-purple-400"
+                      style={{
+                        height: '100%',
+                        animation: 'ai-bars 0.8s ease-in-out infinite',
+                        animationDelay: `${i * 0.1}s`,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-hidden">
-            {/* AI Generating State */}
-            {isGenerating && (
-              <div className="p-4 border-b border-violet-100/60 bg-gradient-to-r from-violet-50 to-purple-50">
-                <div className="flex items-center gap-3">
-                  <div className="relative flex-shrink-0">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center">
-                      <span className="text-xl">🧠</span>
-                    </div>
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white flex items-center justify-center">
-                      <div className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-800">AI is thinking...</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Analyzing your learning patterns</p>
-                    <div className="mt-2 flex gap-1">
-                      {[0, 1, 2, 3, 4].map((i) => (
-                        <div
-                          key={i}
-                          className="h-1 flex-1 rounded-full bg-violet-200 overflow-hidden"
-                        >
-                          <div 
-                            className="h-full bg-violet-500 rounded-full"
-                            style={{
-                              animation: `shimmer 1.5s ease-in-out infinite`,
-                              animationDelay: `${i * 0.2}s`
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Scrollable content */}
             <div className="overflow-y-auto h-full">
               {/* Loading State */}

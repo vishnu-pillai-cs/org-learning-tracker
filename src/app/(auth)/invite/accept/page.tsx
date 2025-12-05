@@ -163,7 +163,7 @@ function AcceptInviteContent() {
               You&apos;re Invited!
             </CardTitle>
             <CardDescription className="text-slate-500">
-              Join LearnTrack and start tracking your learning journey
+              Join LearnForge and start forging your learning journey
             </CardDescription>
           </CardHeader>
 

@@ -56,7 +56,7 @@ export function Navbar() {
                 />
               </svg>
             </div>
-            <span className="text-lg font-bold text-slate-900">LearnTrack</span>
+            <span className="text-lg font-bold text-slate-900">LearnForge</span>
           </Link>
 
           {/* Navigation Links */}
@@ -83,7 +83,7 @@ export function Navbar() {
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="flex items-center gap-3 rounded-lg p-1.5 transition-colors hover:bg-slate-100"
+              className="flex items-center gap-3 rounded-lg p-1.5 transition-colors hover:bg-slate-100 cursor-pointer"
             >
               <Avatar
                 src={session?.user?.image}
@@ -173,7 +173,7 @@ export function Navbar() {
                   </Link>
                   <button
                     onClick={() => signOut({ callbackUrl: "/login" })}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
                   >
                     <svg
                       className="h-4 w-4"

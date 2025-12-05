@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LearnTrack - Organization Learning Tracker",
+  title: "LearnForge - Forge Your Learning Journey",
   description: "Track and manage learning across your organization",
 };
 

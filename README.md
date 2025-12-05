@@ -1,6 +1,6 @@
-# Organization Learning Tracker
+# LearnForge
 
-A modern web application for tracking employee learning and development across an organization. Built with Next.js and powered by Contentstack as a headless CMS.
+A modern web application for forging employee learning and growth across an organization. Built with Next.js and powered by Contentstack as a headless CMS.
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)

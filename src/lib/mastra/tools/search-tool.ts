@@ -19,15 +19,19 @@ interface BraveSearchResponse {
 export const searchResourceTool = createTool({
   id: "search-learning-resources",
   description:
-    "Search the web for learning resources on a specific topic. Returns relevant articles, tutorials, and images from actual sources. Returns null if no relevant results found.",
+    "Search the web for GROWTH-ORIENTED learning resources. Use this to find advanced tutorials, best practices, and next-level content that helps users progress beyond basics.",
   inputSchema: z.object({
     topic: z
       .string()
-      .describe("The learning topic to search for resources about"),
+      .describe("The NEXT-LEVEL learning topic to search for (e.g., 'advanced React patterns', 'production Node.js best practices')"),
     type: z
       .enum(["article", "tutorial", "course", "video", "documentation"])
       .optional()
       .describe("The type of resource to prioritize in search"),
+    skillLevel: z
+      .enum(["intermediate", "advanced", "expert"])
+      .optional()
+      .describe("Target skill level for the resource"),
   }),
   outputSchema: z.object({
     title: z.string(),
@@ -37,9 +41,20 @@ export const searchResourceTool = createTool({
     found: z.boolean(),
   }),
   execute: async ({ context }) => {
-    const { topic, type } = context;
+    const { topic, type, skillLevel } = context;
 
-    const searchQuery = type ? `${topic} ${type}` : `${topic} tutorial`;
+    // Build a growth-focused search query
+    const levelKeywords = {
+      intermediate: "intermediate guide",
+      advanced: "advanced tutorial",
+      expert: "expert deep dive",
+    };
+    
+    const levelModifier = skillLevel ? levelKeywords[skillLevel] : "best practices";
+    const typeModifier = type || "tutorial";
+    
+    // Construct query that avoids beginner content
+    const searchQuery = `${topic} ${levelModifier} ${typeModifier} -beginner -introduction -basics`;
 
     const apiKey = process.env.BRAVE_SEARCH_API_KEY;
 

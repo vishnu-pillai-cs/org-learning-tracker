@@ -33,7 +33,7 @@ function Modal({
     <Fragment>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity cursor-pointer"
         onClick={onClose}
         aria-hidden="true"
       />

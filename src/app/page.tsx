@@ -35,7 +35,7 @@ export default async function HomePage() {
                   />
                 </svg>
               </div>
-              <span className="text-xl font-bold text-slate-900">LearnTrack</span>
+              <span className="text-xl font-bold text-slate-900">LearnForge</span>
             </div>
             <Link
               href="/login"
@@ -206,7 +206,7 @@ export default async function HomePage() {
                   />
                 </svg>
               </div>
-              <span className="font-semibold text-slate-900">LearnTrack</span>
+              <span className="font-semibold text-slate-900">LearnForge</span>
             </div>
             <p className="text-sm text-slate-500">
               Powered by Contentstack

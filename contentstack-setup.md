@@ -115,7 +115,7 @@ CONTENTSTACK_ENVIRONMENT=production
 3. Configure the email:
    - **To**: `{{entry.email}}`
    - **From**: `noreply@yourcompany.com` (or your verified sender)
-   - **Subject**: `You've been invited to join LearnTrack!`
+   - **Subject**: `You've been invited to join LearnForge!`
    
 4. **Email Body** (HTML template):
 
@@ -141,9 +141,9 @@ CONTENTSTACK_ENVIRONMENT=production
     
     <p>Hi {{entry.name}},</p>
     
-    <p>You've been invited to join <strong>LearnTrack</strong> as a <strong>{{entry.role}}</strong>.</p>
+    <p>You've been invited to join <strong>LearnForge</strong> as a <strong>{{entry.role}}</strong>.</p>
     
-    <p>LearnTrack helps you track your learning journey, log courses, articles, and projects, and see your progress over time.</p>
+    <p>LearnForge helps you forge your learning journey, log courses, articles, and projects, and accelerate your growth over time.</p>
     
     <p style="text-align: center; margin: 30px 0;">
       <a href="{{YOUR_APP_URL}}/invite/accept?token={{entry.token}}" class="button">

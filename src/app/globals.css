@@ -18,6 +18,22 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+/* Ensure all interactive elements have pointer cursor */
+a,
+button:not(:disabled),
+[role="button"],
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+select:not(:disabled),
+label[for],
+summary,
+[tabindex]:not([tabindex="-1"]) {
+  cursor: pointer;
+}
+
 /* Custom animations */
 @keyframes fade-in {
   from {
@@ -139,4 +155,16 @@ body {
 
 .animate-glow {
   animation: glow 1.5s ease-in-out 3;
+}
+
+/* AI loading bars animation */
+@keyframes ai-bars {
+  0%, 100% {
+    transform: scaleY(0.4);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
 }

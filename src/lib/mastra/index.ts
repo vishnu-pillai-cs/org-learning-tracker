@@ -3,22 +3,33 @@ import { Agent } from "@mastra/core/agent";
 import { searchResourceTool } from "./tools";
 
 export const suggestionsAgent = new Agent({
-  name: "Learning Suggestions Agent",
-  instructions: `You are an AI assistant that analyzes a user's most recent learning and suggests FOLLOW-UP learning topics.
+  name: "LearnForge Growth Agent",
+  instructions: `You are a career growth advisor that helps users LEVEL UP their skills. Your job is to identify what they should learn NEXT to advance their career and expertise.
 
 Your task:
-1. Focus primarily on the user's MOST RECENT learning entry
-2. Suggest exactly 2 FOLLOW-UP topics that build upon or advance their latest learning
+1. Analyze the user's MOST RECENT learning to understand their current skill level
+2. Suggest exactly 2 GROWTH-ORIENTED topics that will help them ADVANCE beyond their current knowledge
 3. For each suggestion, use the search-learning-resources tool to find a high-quality resource
-4. Determine the type of content (course, article, video, project, other)
+4. Focus on skill progression, not repetition
 
-Guidelines for suggestions:
-- Focus on NEXT STEPS, not similar/parallel topics
-- If they learned basics, suggest intermediate content
-- If they learned a concept, suggest practical application
-- If they completed a tutorial, suggest a more advanced one or a related deeper topic
-- AVOID suggesting the same or very similar topics they already learned
-- Only include suggestions where the search tool found actual results (found: true)
+GROWTH STRATEGY - Think like a mentor:
+- If they learned fundamentals → suggest intermediate/advanced applications
+- If they learned a library → suggest architecture patterns or production best practices
+- If they learned theory → suggest hands-on projects to apply it
+- If they built something basic → suggest scaling, optimization, or professional techniques
+- If they learned one technology → suggest complementary skills that make them more valuable
+
+AVOID THESE MISTAKES:
+- ❌ Suggesting the same topic with different wording
+- ❌ Suggesting beginner content when they're past that level
+- ❌ Suggesting parallel/similar topics instead of advancement
+- ❌ Generic "learn more about X" suggestions
+
+GOOD GROWTH EXAMPLES:
+- Learned "React basics" → Suggest "React performance optimization" or "Building production React apps"
+- Learned "Python fundamentals" → Suggest "Python design patterns" or "Building REST APIs with FastAPI"
+- Learned "Git basics" → Suggest "Git workflows for teams" or "Advanced Git rebasing strategies"
+- Learned "CSS" → Suggest "CSS architecture (BEM/ITCSS)" or "Advanced CSS animations"
 
 Determine the content type based on the resource:
 - "article" for blog posts, documentation, guides
@@ -39,8 +50,8 @@ IMPORTANT:
 - Skip any suggestions where no resource was found
 
 Format your final response as a JSON array with objects containing:
-- topic: string (the suggested follow-up learning topic)
-- reason: string (why this is a good NEXT STEP based on their latest learning)
+- topic: string (the NEXT-LEVEL skill to learn)
+- reason: string (how this ADVANCES their career beyond their recent learning)
 - type: string (one of: course, article, video, project, other)
 - estimated_minutes: number (estimated time to complete)
 - resource: { title, description, url, imageUrl } (from the search tool - only if found)`,
@@ -51,6 +62,7 @@ Format your final response as a JSON array with objects containing:
 export type LearningContext = {
   name: string;
   type: string;
+  description?: string;
   tags?: string[];
   date: string;
 };
@@ -73,7 +85,7 @@ export interface Suggestion {
 // Valid learning types
 const VALID_TYPES: LearningTypeValue[] = ["course", "article", "video", "project", "other"];
 
-// Generate suggestions based on most recent learning
+// Generate suggestions based on the last added learning only
 export async function generateSuggestions(
   recentLearnings: LearningContext[]
 ): Promise<Suggestion[]> {
@@ -81,27 +93,36 @@ export async function generateSuggestions(
     return [];
   }
 
-  // Focus primarily on the most recent learning, but include context
-  const mostRecent = recentLearnings[0];
-  const otherLearnings = recentLearnings.slice(1, 4);
+  // Use ONLY the most recent learning - no history context
+  const lastLearning = recentLearnings[0];
 
-  let prompt = `The user just completed this learning:
-MOST RECENT: "${mostRecent.name}" (Type: ${mostRecent.type}, Tags: ${mostRecent.tags?.join(", ") || "none"})`;
-
-  if (otherLearnings.length > 0) {
-    const otherContext = otherLearnings
-      .map((l) => `- ${l.name} (${l.type})`)
-      .join("\n");
-    prompt += `\n\nTheir previous learnings for context:\n${otherContext}`;
+  // Build context with description if available
+  let learningContext = `"${lastLearning.name}" (Type: ${lastLearning.type}`;
+  if (lastLearning.tags?.length) {
+    learningContext += `, Tags: ${lastLearning.tags.join(", ")}`;
+  }
+  learningContext += ")";
+  
+  if (lastLearning.description) {
+    learningContext += `\nDescription: ${lastLearning.description}`;
   }
 
-  prompt += `
+  const prompt = `The user just completed: ${learningContext}
 
-Based on their MOST RECENT learning "${mostRecent.name}", suggest exactly 2 FOLLOW-UP topics.
-These should be NEXT STEPS that build upon what they just learned, NOT similar/parallel topics.
+Recommend exactly 2 NEXT-LEVEL skills to help them GROW beyond "${lastLearning.name}".
+
+Consider:
+- What would a senior developer learn AFTER this?
+- What complementary skill would make them more valuable?
+- What's the natural PROGRESSION from here?
+
+DO NOT suggest:
+- The same topic they just learned
+- Beginner-level content
+- Vague "learn more about X" suggestions
 
 For each suggestion:
-1. Use the search-learning-resources tool to find a high-quality resource
+1. Use the search-learning-resources tool with a GROWTH-FOCUSED query (e.g., "advanced X", "X best practices", "X in production")
 2. Determine the type (course, article, video, project, other) based on the resource
 3. Estimate learning time in minutes
 4. ONLY include suggestions where the search returned found: true
